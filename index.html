@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Stalk Market 🌱</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky: #6BBBF5;
+  --green: #5CAE4A;
+  --green-l: #7BC67A;
+  --gold: #F5D020;
+  --cream: #FDFDF5;
+  --brown: #8B6347;
+  --text: #3D2B1F;
+  --panel: rgba(253,253,245,0.96);
+  --up: #43A047;
+  --down: #E53935;
+  --r: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: linear-gradient(to bottom, var(--sky) 0%, #87CEEB 38%, var(--green) 38%, var(--green-l) 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: var(--text);
+}
+
+/* ── LOADING ── */
+#loading {
+  position: fixed; inset: 0;
+  background: linear-gradient(135deg, #6BBBF5, #87CEEB);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 999; transition: opacity 0.8s;
+}
+#loading .isle { font-size: 72px; animation: bob 1.6s ease-in-out infinite; }
+#loading h1 {
+  font-family: 'Press Start 2P', monospace;
+  color: white; text-shadow: 4px 4px 0 #2a6a2a;
+  font-size: clamp(12px, 2.5vw, 20px);
+  margin: 18px 0 10px; text-align: center; line-height: 1.6;
+}
+#loading p { color: rgba(255,255,255,0.8); font-size: 14px; font-weight: 700; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+/* ── LAYOUT ── */
+#game { max-width: 920px; margin: 0 auto; padding: 14px; }
+
+/* ── HEADER ── */
+#hdr {
+  background: var(--panel);
+  border: 3px solid var(--brown);
+  border-radius: var(--r);
+  padding: 12px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 4px 0 rgba(0,0,0,.15);
+  margin-bottom: 10px; flex-wrap: wrap; gap: 10px;
+}
+.bells {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Press Start 2P', monospace; font-size: 12px;
+}
+.bells .amt { color: #b8860b; font-size: 14px; }
+.isle-badge {
+  background: linear-gradient(135deg, var(--green), var(--green-l));
+  color: white; padding: 6px 16px; border-radius: 20px;
+  font-weight: 800; font-size: 13px; box-shadow: 0 3px 0 #2d6e2d;
+}
+.lvl-bar-wrap { width: 150px; background: #e0d5c5; border-radius: 8px; height: 10px; overflow:hidden; margin-top: 4px; }
+.lvl-bar { height:100%; background: linear-gradient(90deg, var(--green), var(--green-l)); border-radius:8px; transition: width .6s; }
+.clock { font-size: 12px; color: #777; font-weight: 700; }
+.api-dot { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-top: 3px; display:inline-block; }
+.api-live { background: #e8f5e9; color: var(--up); }
+.api-demo { background: #fff9c4; color: #e65100; }
+
+/* ── TICKER ── */
+#ticker {
+  background: linear-gradient(90deg, var(--green), var(--green-l));
+  color: white; border-radius: var(--r); padding: 10px 0;
+  overflow: hidden; margin-bottom: 10px;
+  box-shadow: 0 3px 0 #2d6e2d;
+}
+.ticker-inner { display: inline-block; white-space: nowrap; animation: scroll 40s linear infinite; font-weight: 700; font-size: 13px; }
+@keyframes scroll { 0%{transform:translateX(100vw)} 100%{transform:translateX(-100%)} }
+
+/* ── TABS ── */
+#tabs { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.tab-btn {
+  flex: 1; min-width: 80px; padding: 10px 14px;
+  background: rgba(255,255,255,.75); border: 3px solid var(--brown);
+  border-radius: 12px; cursor: pointer;
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px;
+  color: var(--text); transition: all .15s;
+}
+.tab-btn:hover { background: rgba(255,255,255,.95); transform: translateY(-2px); }
+.tab-btn.active { background: var(--green); color: white; border-color: #2d6e2d; box-shadow: 0 4px 0 #2d6e2d; }
+
+/* ── PANEL ── */
+.panel {
+  background: var(--panel); border: 3px solid var(--brown);
+  border-radius: var(--r); box-shadow: 0 4px 0 rgba(0,0,0,.13);
+  padding: 18px;
+}
+
+/* ── STOCK CARDS ── */
+.stocks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px,1fr)); gap: 12px; }
+.scard {
+  background: white; border-radius: 12px; border: 2px solid #e0d5c5;
+  padding: 14px; transition: transform .15s, box-shadow .15s;
+}
+.scard:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.1); }
+.scard-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.sym-badge {
+  font-family: 'Press Start 2P', monospace; font-size: 10px;
+  background: var(--text); color: white; padding: 4px 8px; border-radius: 6px;
+}
+.sname { font-size: 11px; color: #999; margin-top: 4px; }
+.sprice { font-family: 'Press Start 2P', monospace; font-size: 13px; }
+.schg { font-size: 12px; font-weight: 800; padding: 2px 7px; border-radius: 6px; margin-top: 3px; display:inline-block; }
+.chg-up { background: #e8f5e9; color: var(--up); }
+.chg-dn { background: #ffebee; color: var(--down); }
+.sactions { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.qty { width: 58px; padding: 6px; border: 2px solid #e0d5c5; border-radius: 8px; font-family: 'Nunito',sans-serif; font-weight: 700; text-align: center; font-size: 13px; }
+.btn-b, .btn-s {
+  flex: 1; padding: 8px 10px; border-radius: 9px; border: none; cursor: pointer;
+  font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 13px; transition: transform .1s;
+}
+.btn-b:active, .btn-s:active { transform: scale(.95); }
+.btn-b { background: var(--up); color: white; box-shadow: 0 3px 0 #2e7d32; }
+.btn-s { background: var(--down); color: white; box-shadow: 0 3px 0 #b71c1c; }
+.btn-b:hover { background: #388e3c; }
+.btn-s:hover { background: #c62828; }
+.owned { font-size: 11px; color: #aaa; font-weight: 700; text-align: right; margin-top: 5px; }
+
+/* ── PORTFOLIO ── */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 10px; margin-bottom: 18px; }
+.stat-card { background: white; border-radius: 12px; border: 2px solid #e0d5c5; padding: 12px; text-align: center; }
+.stat-lbl { font-size: 11px; color: #999; font-weight: 700; margin-bottom: 5px; }
+.stat-val { font-family: 'Press Start 2P', monospace; font-size: 11px; }
+.holdings { display: flex; flex-direction: column; gap: 10px; }
+.hrow {
+  background: white; border-radius: 12px; border: 2px solid #e0d5c5;
+  padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
+}
+.hrow .hsym { font-family: 'Press Start 2P', monospace; font-size: 10px; }
+.hrow .hmeta { font-size: 12px; color: #aaa; margin-top: 3px; }
+.pnl-up { color: var(--up); font-weight: 800; }
+.pnl-dn { color: var(--down); font-weight: 800; }
+
+/* ── TURNIPS ── */
+.turnip-hero {
+  text-align: center; padding: 20px 16px;
+  background: linear-gradient(135deg, #fff9c4, #fff176);
+  border-radius: 12px; border: 2px solid #f9a825; margin-bottom: 16px;
+}
+.t-price { font-family: 'Press Start 2P', monospace; font-size: 22px; color: #e65100; margin: 8px 0; }
+.forecast { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; margin: 14px 0; }
+.fday {
+  background: white; border-radius: 8px; padding: 7px 3px; text-align: center;
+  border: 2px solid #e0d5c5; font-size: 11px;
+}
+.fday.today { border-color: #f9a825; background: #fff9c4; }
+.fday.past  { background: #f5f5f5; opacity: .6; }
+.fday .dname { font-weight: 800; color: #aaa; font-size: 10px; }
+.fday .dprice { font-weight: 800; margin-top: 3px; font-size: 12px; }
+
+/* ── VILLAGE ── */
+.npc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap: 14px; }
+.npc-card { background: white; border-radius: 12px; border: 2px solid #e0d5c5; padding: 16px; text-align: center; }
+.npc-av { font-size: 46px; margin-bottom: 6px; }
+.npc-name { font-family: 'Press Start 2P', monospace; font-size: 9px; margin-bottom: 4px; }
+.npc-role { font-size: 11px; color: #aaa; margin-bottom: 8px; }
+.speech {
+  background: #f5f5f5; border-radius: 10px; padding: 10px 12px;
+  font-size: 12px; color: #555; font-style: italic; line-height: 1.5; text-align: left;
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 22px; right: 22px;
+  background: var(--text); color: white;
+  padding: 12px 18px; border-radius: 12px;
+  font-weight: 700; font-size: 13px;
+  opacity: 0; transform: translateY(20px);
+  transition: all .3s; z-index: 100; max-width: 320px; line-height: 1.4;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── MISC ── */
+.locked-msg { text-align: center; padding: 36px; color: #bbb; margin-top: 16px; }
+.locked-msg .icon { font-size: 42px; }
+.big-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 14px; transition: transform .1s; }
+.big-btn:active { transform: scale(.97); }
+.card-sm { background: white; border: 2px solid #e0d5c5; border-radius: 12px; padding: 14px; margin-top: 14px; }
+.sentiment-bar { text-align: center; padding: 14px; background: white; border-radius: 12px; border: 2px solid #e0d5c5; margin-top: 14px; font-size: 13px; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,.2); border-radius: 3px; }
+
+@media(max-width:600px){
+  .stocks-grid { grid-template-columns: 1fr; }
+  .forecast { grid-template-columns: repeat(4,1fr); }
+  #hdr { flex-direction: column; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="isle">🏝️</div>
+  <h1>THE STALK<br>MARKET</h1>
+  <p id="load-msg">Fetching market data…</p>
+</div>
+
+<div id="toast"></div>
+
+<div id="game" style="display:none">
+  <!-- HEADER -->
+  <div id="hdr">
+    <div class="bells">
+      <span style="font-size:22px">🔔</span>
+      <div>
+        <div style="font-size:9px;color:#aaa;margin-bottom:2px">BELLS</div>
+        <div class="amt" id="bells-amt">50,000</div>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <div class="isle-badge" id="isle-badge">🏝️ Deserted Isle</div>
+      <div class="lvl-bar-wrap" style="margin:5px auto 0"><div class="lvl-bar" id="lvl-bar" style="width:0%"></div></div>
+      <div style="font-size:10px;color:#aaa;margin-top:3px" id="lvl-hint"></div>
+    </div>
+    <div style="text-align:right">
+      <div class="clock" id="clock"></div>
+      <div class="api-dot api-demo" id="api-dot">📡 Loading…</div>
+      <div style="margin-top:5px">
+        <button onclick="resetGame()" style="font-size:10px;padding:3px 8px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:white;color:#888">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div id="ticker"><span class="ticker-inner" id="ticker-text">🌿 Welcome to The Stalk Market! Loading…</span></div>
+
+  <!-- TABS -->
+  <div id="tabs">
+    <button class="tab-btn active" onclick="switchTab('market')">🏪 Market</button>
+    <button class="tab-btn" onclick="switchTab('portfolio')">💼 Portfolio</button>
+    <button class="tab-btn" onclick="switchTab('turnips')">🌱 Turnips</button>
+    <button class="tab-btn" onclick="switchTab('village')">🏘️ Village</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="panel" id="content">Loading…</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════
+
+const ISLANDS = [
+  { name:"Deserted Isle",   emoji:"🏝️",  threshold:0 },
+  { name:"Budding Village", emoji:"🌱",  threshold:100_000 },
+  { name:"Thriving Town",   emoji:"🏘️",  threshold:500_000 },
+  { name:"Booming City",    emoji:"🏙️",  threshold:1_000_000 },
+  { name:"Nook's Paradise", emoji:"🌟",  threshold:5_000_000 },
+];
+
+const CATALOG = [
+  { sym:"AAPL",  name:"Apple Inc.",           lvl:0, em:"🍎" },
+  { sym:"MSFT",  name:"Microsoft Corp.",      lvl:0, em:"💻" },
+  { sym:"AMZN",  name:"Amazon.com Inc.",      lvl:0, em:"📦" },
+  { sym:"GOOGL", name:"Alphabet Inc.",        lvl:1, em:"🔍" },
+  { sym:"META",  name:"Meta Platforms",       lvl:1, em:"📱" },
+  { sym:"NVDA",  name:"NVIDIA Corp.",         lvl:1, em:"🎮" },
+  { sym:"TSLA",  name:"Tesla Inc.",           lvl:2, em:"⚡" },
+  { sym:"JPM",   name:"JPMorgan Chase",       lvl:2, em:"🏦" },
+  { sym:"WMT",   name:"Walmart Inc.",         lvl:2, em:"🛒" },
+  { sym:"DIS",   name:"The Walt Disney Co.",  lvl:3, em:"🏰" },
+  { sym:"NFLX",  name:"Netflix Inc.",         lvl:3, em:"🎬" },
+  { sym:"BRKB",  name:"Berkshire Hathaway",   lvl:3, em:"📊" },
+  { sym:"SPY",   name:"S&P 500 ETF",          lvl:4, em:"📈" },
+  { sym:"QQQ",   name:"Nasdaq-100 ETF",       lvl:4, em:"💡" },
+];
+
+// Approximate fallback prices (used when API is unavailable)
+const DEMO = {
+  AAPL: { price:213.49, chg:1.24,  name:"Apple Inc." },
+  MSFT: { price:415.50, chg:-0.43, name:"Microsoft Corp." },
+  AMZN: { price:196.89, chg:2.11,  name:"Amazon.com Inc." },
+  GOOGL:{ price:178.45, chg:0.87,  name:"Alphabet Inc." },
+  META: { price:584.23, chg:-1.15, name:"Meta Platforms" },
+  NVDA: { price:132.61, chg:3.45,  name:"NVIDIA Corp." },
+  TSLA: { price:248.42, chg:-2.73, name:"Tesla Inc." },
+  JPM:  { price:238.91, chg:0.32,  name:"JPMorgan Chase" },
+  WMT:  { price:94.43,  chg:0.56,  name:"Walmart Inc." },
+  DIS:  { price:112.87, chg:-0.91, name:"The Walt Disney Co." },
+  NFLX: { price:935.14, chg:1.78,  name:"Netflix Inc." },
+  BRKB: { price:473.00, chg:0.21,  name:"Berkshire Hathaway" },
+  SPY:  { price:589.44, chg:0.65,  name:"S&P 500 ETF" },
+  QQQ:  { price:512.78, chg:1.12,  name:"Nasdaq-100 ETF" },
+};
+
+const NPCS = [
+  { name:"Tom Nook",  em:"🦝", role:"Your Broker",
+    bull:["Wonderful! The market is FLOURISHING today! Nook Inc. approves! Yes yes!","Every day is a good day to invest, yes yes! The numbers look splendid!"],
+    bear:["Hmm, a bit of a dip today… but Tom Nook sees opportunity! Buy low, friend!","Don't panic about the red numbers! I believe in long-term value, yes yes!"],
+    flat:["The market is nice and steady today. A fine time to review your portfolio!","Nook Inc. is always open for business! What will you invest in today?"] },
+  { name:"Isabelle",  em:"🐶", role:"Market Analyst",
+    bull:["Oh my goodness! Everything is going up today! What a wonderful day! ☀️","I've reviewed the reports and things look very promising! Keep it up! 📋"],
+    bear:["Oh dear… the markets look a bit rough. But I'm sure we'll bounce back! 💪","Some red on the board today. I'll make a special announcement when it improves! 📢"],
+    flat:["Today's market is looking nice and stable! Perfect weather for trading! 🌤️","Nothing too dramatic today — just steady as she goes! 📝"] },
+  { name:"Blathers",  em:"🦉", role:"Senior Analyst",
+    bull:["*Hoots excitedly!* These bullish signals remind me of the great run of 2009! Statistically, momentum tends to continue!","Fascinating! The market exhibits classic bullish sentiment. One finds it quite stimulating!"],
+    bear:["*yawns* Ah! Correction periods are perfectly natural. The market has recovered from every single downturn in history. Remarkable!","One must not be alarmed. Bear markets are merely the market digesting previous gains, you see. Quite textbook, really."],
+    flat:["The market shows classic consolidation patterns today. Quite unremarkable. Did you want to hear about 15th-century trade routes instead?","Steady markets are hallmarks of healthy economies, ho ho! Nothing dramatic, but much to appreciate."] },
+  { name:"Timmy",     em:"🦝", role:"Junior Trader",
+    bull:["Uncle Nook says green means good! I like green! Buy buy buy! 🐂","All the prices are going up! Is this what a bull market feels like?! WOW!"],
+    bear:["Tommy said sell… Uncle Nook said hold… I don't know what to do! 😰","The numbers are red! Is that bad? I think that's bad…"],
+    flat:["We're open for business! Tommy and I will give you the best prices!","Did you know we also do the Stalk Market? Ask about our turnip bundles! 🌱"] },
+  { name:"Tommy",     em:"🦝", role:"Junior Trader",
+    bull:["We're in profit! Timmy, WE'RE IN PROFIT! This is what Uncle Nook talks about!","Wow, everything's going up. Maybe take some profits? Just a thought… 🤔"],
+    bear:["I read you should 'buy the dip'… but what IS the dip? How much dip is too much dip?","Don't panic sell! Dollar cost average, whatever that means. Uncle Nook said so!"],
+    flat:["Our shop financials look stable today. Uncle Nook would be proud! 📊","Timmy and I are studying technical analysis. Did you know there are things called 'candlesticks'?!"] },
+];
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+
+let G = {
+  bells: 50_000,
+  portfolio: {},   // { SYM: { shares, avgPrice } }
+  isleLevel: 0,
+  turnips: { buyPrice: null, shares: 0, weekId: null },
+  prices: {},      // { SYM: { price, chg, name } }
+  prevPrices: {},
+  source: 'loading',
+};
+
+let curTab = 'market';
+
+function save() { try { localStorage.setItem('stalkmarket_v3', JSON.stringify(G)); } catch(e){} }
+
+function load() {
+  try {
+    const d = localStorage.getItem('stalkmarket_v3');
+    if (d) G = { ...G, ...JSON.parse(d) };
+  } catch(e) {}
+}
+
+function resetGame() {
+  if (!confirm('Reset all progress and start fresh?')) return;
+  localStorage.removeItem('stalkmarket_v3');
+  location.reload();
+}
+
+// ══════════════════════════════════════════════════════════
+// STOCK API
+// ══════════════════════════════════════════════════════════
+
+const PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
+];
+
+async function tryFetch(url) {
+  for (const proxy of PROXIES) {
+    try {
+      const r = await fetch(proxy + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) continue;
+      return await r.json();
+    } catch(e) { continue; }
+  }
+  throw new Error('All proxies failed');
+}
+
+async function fetchPrices(syms) {
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms.join(',')}&fields=regularMarketPrice,regularMarketChangePercent,shortName`;
+  const data = await tryFetch(url);
+  const results = data?.quoteResponse?.result || [];
+  if (!results.length) throw new Error('Empty result');
+  const out = {};
+  for (const r of results) {
+    out[r.symbol] = {
+      price: r.regularMarketPrice,
+      chg:   r.regularMarketChangePercent,
+      name:  r.shortName || r.symbol,
+    };
+  }
+  return out;
+}
+
+function simMove(prices) {
+  const out = {};
+  for (const [s, d] of Object.entries(prices)) {
+    const vol = ['TSLA','NVDA','META'].includes(s) ? 0.014 : 0.004;
+    const move = (Math.random() - 0.5) * 2 * vol;
+    out[s] = { ...d, price: Math.max(1, Math.round(d.price*(1+move)*100)/100), chg: +(move*100).toFixed(2) };
+  }
+  return out;
+}
+
+async function refreshPrices() {
+  const syms = CATALOG.map(c => c.sym);
+  try {
+    const fresh = await fetchPrices(syms);
+    G.prevPrices = { ...G.prices };
+    G.prices = { ...DEMO, ...fresh };
+    G.source = 'live';
+    setApiDot('🟢 Live Data', 'api-live');
+  } catch(e) {
+    G.prevPrices = { ...G.prices };
+    G.prices = Object.keys(G.prices).length ? simMove(G.prices) : { ...DEMO };
+    G.source = 'demo';
+    setApiDot('🟡 Simulated', 'api-demo');
+  }
+  recalcLevel();
+  updateBells();
+  updateTicker();
+  renderCur();
+  save();
+}
+
+function setApiDot(text, cls) {
+  const el = document.getElementById('api-dot');
+  if (el) { el.textContent = text; el.className = 'api-dot ' + cls; }
+}
+
+// ══════════════════════════════════════════════════════════
+// TURNIP MARKET (STALK MARKET)
+// ══════════════════════════════════════════════════════════
+
+function weekId() {
+  const n = new Date();
+  const y = n.getFullYear();
+  const w = Math.floor((n - new Date(y,0,1)) / 604800000);
+  return `${y}-${w}`;
+}
+
+function dow() { return new Date().getDay(); } // 0=Sun
+
+// Deterministic LCG from seed
+function lcg(seed) { return ((1664525 * seed + 1013904223) >>> 0) / 4294967296; }
+
+function weekSeed() {
+  return weekId().split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+}
+
+function turnipBuyPrice() {
+  return 90 + Math.floor(lcg(weekSeed()) * 21); // 90–110
+}
+
+function weekPrices() {
+  const seed = weekSeed();
+  const buy = turnipBuyPrice();
+  const types = ['spike','bulk','falling','random'];
+  const type = types[Math.floor(lcg(seed + 1) * 4)];
+  const arr = [buy];
+  for (let i = 1; i <= 6; i++) {
+    const r = lcg(seed * 31 + i * 7919);
+    let p;
+    if (type === 'spike') {
+      const spike = 2 + Math.floor(lcg(seed + 99) * 4);
+      p = i === spike ? Math.round(buy * (1.8 + r * 0.6)) : Math.round(buy * (0.55 + r * 0.3));
+    } else if (type === 'bulk') {
+      p = Math.round(buy * (1.0 + i * 0.05 + r * 0.1));
+    } else if (type === 'falling') {
+      p = Math.round(buy * (1.1 - i * 0.09 + r * 0.05));
+    } else {
+      p = Math.round(buy * (0.55 + r * 0.9));
+    }
+    arr.push(Math.max(10, p));
+  }
+  return arr;
+}
+
+function checkSpoilage() {
+  if (!G.turnips.shares) return;
+  if (G.turnips.weekId && G.turnips.weekId !== weekId()) {
+    showToast(`😱 Your ${G.turnips.shares.toLocaleString()} turnip bundles SPOILED! They're worthless now!`);
+    G.turnips = { buyPrice:null, shares:0, weekId:null };
+    save();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// ISLAND PROGRESSION
+// ══════════════════════════════════════════════════════════
+
+function netWorth() {
+  let total = G.bells;
+  for (const [sym, h] of Object.entries(G.portfolio)) {
+    total += h.shares * (G.prices[sym]?.price || h.avgPrice);
+  }
+  if (G.turnips.shares) {
+    const wp = weekPrices();
+    total += G.turnips.shares * (wp[dow()] || G.turnips.buyPrice);
+  }
+  return total;
+}
+
+function recalcLevel() {
+  const w = netWorth();
+  let lv = 0;
+  for (let i = ISLANDS.length - 1; i >= 0; i--) {
+    if (w >= ISLANDS[i].threshold) { lv = i; break; }
+  }
+  if (lv > G.isleLevel) {
+    showToast(`🎉 Island Level Up! Welcome to ${ISLANDS[lv].emoji} ${ISLANDS[lv].name}! New stocks unlocked!`);
+  }
+  G.isleLevel = lv;
+  const el = document.getElementById('isle-badge');
+  if (el) el.textContent = `${ISLANDS[lv].emoji} ${ISLANDS[lv].name}`;
+  const bar = document.getElementById('lvl-bar');
+  const hint = document.getElementById('lvl-hint');
+  const next = ISLANDS[lv + 1];
+  if (bar) {
+    const cur = ISLANDS[lv].threshold;
+    const pct = next ? Math.min(100, ((w - cur) / (next.threshold - cur)) * 100) : 100;
+    bar.style.width = pct + '%';
+  }
+  if (hint) {
+    hint.textContent = next ? `🔔${Math.round(next.threshold - w).toLocaleString()} to next level` : '🌟 Max Level!';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// TRADING
+// ══════════════════════════════════════════════════════════
+
+function buy(sym, rawQty) {
+  const qty = parseInt(rawQty);
+  if (!qty || qty < 1) { showToast('Enter a valid quantity!'); return; }
+  const price = G.prices[sym]?.price;
+  if (!price) { showToast('Price unavailable!'); return; }
+  const cost = Math.round(price * qty * 100) / 100;
+  if (cost > G.bells) { showToast(`Not enough Bells! Need 🔔${cost.toLocaleString()}`); return; }
+  G.bells -= cost;
+  const h = G.portfolio[sym] || { shares:0, avgPrice:0 };
+  const total = h.shares + qty;
+  h.avgPrice = (h.avgPrice * h.shares + price * qty) / total;
+  h.shares = total;
+  G.portfolio[sym] = h;
+  recalcLevel(); updateBells();
+  showToast(`✅ Bought ${qty} share${qty>1?'s':''} of ${sym} for 🔔${cost.toLocaleString()}`);
+  save(); renderCur();
+}
+
+function sell(sym, rawQty) {
+  const qty = parseInt(rawQty);
+  if (!qty || qty < 1) { showToast('Enter a valid quantity!'); return; }
+  const h = G.portfolio[sym];
+  if (!h || h.shares < qty) { showToast("You don't own that many shares!"); return; }
+  const price = G.prices[sym]?.price;
+  if (!price) { showToast('Price unavailable!'); return; }
+  const proceeds = Math.round(price * qty * 100) / 100;
+  const profit   = Math.round((price - h.avgPrice) * qty * 100) / 100;
+  G.bells += proceeds;
+  h.shares -= qty;
+  if (h.shares === 0) delete G.portfolio[sym]; else G.portfolio[sym] = h;
+  recalcLevel(); updateBells();
+  const sign = profit >= 0 ? `+🔔${profit.toLocaleString()}` : `-🔔${Math.abs(profit).toLocaleString()}`;
+  showToast(`💰 Sold ${qty} ${sym} for 🔔${proceeds.toLocaleString()} (P&L: ${sign})`);
+  save(); renderCur();
+}
+
+function buyTurnips(rawQty) {
+  const qty = parseInt(rawQty);
+  if (!qty || qty < 1) { showToast('Enter a valid quantity!'); return; }
+  if (dow() !== 1) { showToast('🌱 Turnips are only sold on Mondays!'); return; }
+  const price = turnipBuyPrice();
+  const cost = price * qty;
+  if (cost > G.bells) { showToast(`Not enough Bells! Need 🔔${cost.toLocaleString()}`); return; }
+  G.bells -= cost;
+  G.turnips.buyPrice = price;
+  G.turnips.shares = (G.turnips.shares || 0) + qty;
+  G.turnips.weekId = weekId();
+  updateBells();
+  showToast(`🌱 Bought ${qty.toLocaleString()} turnip bundles at 🔔${price} each!`);
+  save(); renderTurnips();
+}
+
+function sellTurnips() {
+  if (!G.turnips.shares) { showToast("You don't have any turnips!"); return; }
+  if (dow() === 0) { showToast("Timmy & Tommy won't buy turnips on Sundays!"); return; }
+  checkSpoilage();
+  if (!G.turnips.shares) return;
+  const wp = weekPrices();
+  const price = wp[dow()];
+  const proceeds = price * G.turnips.shares;
+  const profit = proceeds - G.turnips.buyPrice * G.turnips.shares;
+  G.bells += proceeds;
+  const sign = profit >= 0 ? `Profit +🔔${profit.toLocaleString()}` : `Loss -🔔${Math.abs(profit).toLocaleString()}`;
+  showToast(`🌱 Sold ${G.turnips.shares.toLocaleString()} turnips for 🔔${proceeds.toLocaleString()}! (${sign})`);
+  G.turnips = { buyPrice:null, shares:0, weekId:null };
+  recalcLevel(); updateBells(); save(); renderTurnips();
+}
+
+// ══════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════
+
+function updateBells() {
+  const el = document.getElementById('bells-amt');
+  if (el) el.textContent = Math.round(G.bells).toLocaleString();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 3600);
+}
+
+function switchTab(tab) {
+  curTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['market','portfolio','turnips','village'][i] === tab);
+  });
+  renderCur();
+}
+
+function renderCur() {
+  if (curTab==='market')    renderMarket();
+  else if (curTab==='portfolio') renderPortfolio();
+  else if (curTab==='turnips')   renderTurnips();
+  else                           renderVillage();
+}
+
+function bell(n, decimals=2) {
+  return '🔔' + n.toLocaleString(undefined,{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+}
+
+function updateTicker() {
+  const parts = [];
+  for (const s of CATALOG) {
+    const p = G.prices[s.sym];
+    if (!p) continue;
+    const arrow = p.chg >= 0 ? '▲' : '▼';
+    const dot   = p.chg >= 0 ? '🟢' : '🔴';
+    parts.push(`${dot} ${s.sym} ${bell(p.price)} ${arrow}${Math.abs(p.chg).toFixed(2)}%`);
+  }
+  const el = document.getElementById('ticker-text');
+  if (el && parts.length) el.textContent = '  🌿 ' + parts.join('   ✦   ') + '   🌿  ';
+}
+
+function updateClock() {
+  const n = new Date();
+  const el = document.getElementById('clock');
+  if (el) el.textContent = n.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'}) + ' ' +
+    n.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  // Day/night sky
+  const h = n.getHours();
+  const sky = h>=6&&h<9 ? '#FFB74D' : h>=9&&h<17 ? '#6BBBF5' : h>=17&&h<20 ? '#FF8A65' : '#283593';
+  const sky2 = h>=17||h<6 ? '#1A237E' : '#87CEEB';
+  document.body.style.background = `linear-gradient(to bottom,${sky} 0%,${sky2} 38%,#5CAE4A 38%,#7BC67A 100%)`;
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER: MARKET
+// ══════════════════════════════════════════════════════════
+
+function renderMarket() {
+  const unlocked = CATALOG.filter(c => c.lvl <= G.isleLevel);
+  const locked   = CATALOG.filter(c => c.lvl >  G.isleLevel);
+
+  let h = '<div class="stocks-grid">';
+  for (const s of unlocked) {
+    const p = G.prices[s.sym];
+    if (!p) continue;
+    const holding = G.portfolio[s.sym];
+    const cls = p.chg >= 0 ? 'chg-up' : 'chg-dn';
+    const chgStr = `${p.chg >= 0 ? '+' : ''}${p.chg.toFixed(2)}%`;
+    h += `
+    <div class="scard">
+      <div class="scard-hdr">
+        <div>
+          <div class="sym-badge">${s.em} ${s.sym}</div>
+          <div class="sname">${p.name || s.name}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="sprice">${bell(p.price)}</div>
+          <span class="schg ${cls}">${chgStr}</span>
+        </div>
+      </div>
+      <div class="sactions">
+        <input type="number" class="qty" id="q-${s.sym}" value="1" min="1">
+        <button class="btn-b" onclick="buy('${s.sym}',document.getElementById('q-${s.sym}').value)">Buy</button>
+        <button class="btn-s" onclick="sell('${s.sym}',document.getElementById('q-${s.sym}').value)">Sell</button>
+      </div>
+      ${holding ? `<div class="owned">📋 ${holding.shares} shares · avg ${bell(holding.avgPrice)}</div>` : ''}
+    </div>`;
+  }
+  h += '</div>';
+
+  if (locked.length) {
+    const nw = netWorth();
+    const next = ISLANDS.find(i => i.threshold > nw);
+    h += `<div class="locked-msg">
+      <div class="icon">🔒</div>
+      <p style="font-weight:800;margin-top:8px">${locked.length} more stock${locked.length>1?'s':''} locked</p>
+      <p style="font-size:12px;margin-top:4px">${next ? `Reach 🔔${next.threshold.toLocaleString()} net worth to unlock more!` : ''}</p>
+    </div>`;
+  }
+
+  document.getElementById('content').innerHTML = h;
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER: PORTFOLIO
+// ══════════════════════════════════════════════════════════
+
+function renderPortfolio() {
+  const holdings = Object.entries(G.portfolio);
+  const stockVal  = holdings.reduce((s,[sym,h]) => s + h.shares*(G.prices[sym]?.price||h.avgPrice), 0);
+  const invested  = holdings.reduce((s,[,h]) => s + h.shares*h.avgPrice, 0);
+  const pnl       = stockVal - invested;
+  const nw        = netWorth();
+  const pnlCls    = pnl>=0 ? 'pnl-up' : 'pnl-dn';
+
+  let h = `
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-lbl">💰 Cash Bells</div><div class="stat-val">${bell(G.bells,0)}</div></div>
+    <div class="stat-card"><div class="stat-lbl">📈 Stock Value</div><div class="stat-val">${bell(stockVal,0)}</div></div>
+    <div class="stat-card"><div class="stat-lbl">💎 Net Worth</div><div class="stat-val">${bell(nw,0)}</div></div>
+    <div class="stat-card"><div class="stat-lbl">📊 Total P&amp;L</div><div class="stat-val ${pnlCls}">${pnl>=0?'+':''}${bell(pnl,0)}</div></div>
+  </div>`;
+
+  if (!holdings.length) {
+    h += `<div style="text-align:center;padding:40px;color:#bbb">
+      <div style="font-size:46px">📭</div>
+      <p style="font-weight:800;margin-top:8px">No holdings yet!</p>
+      <p style="font-size:12px;margin-top:4px">Head to the Market tab to buy your first shares!</p>
+    </div>`;
+  } else {
+    h += '<div class="holdings">';
+    for (const [sym, holding] of holdings) {
+      const st = CATALOG.find(c => c.sym===sym);
+      const price  = G.prices[sym]?.price || holding.avgPrice;
+      const val    = holding.shares * price;
+      const rowpnl = (price - holding.avgPrice) * holding.shares;
+      const pct    = ((price - holding.avgPrice) / holding.avgPrice * 100).toFixed(1);
+      const rc     = rowpnl>=0 ? 'pnl-up' : 'pnl-dn';
+      h += `
+      <div class="hrow">
+        <div>
+          <div class="hsym">${st?.em||'📊'} ${sym}</div>
+          <div class="hmeta">${holding.shares} shares · avg ${bell(holding.avgPrice)} · now ${bell(price)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800">${bell(val,0)}</div>
+          <div class="${rc}">${rowpnl>=0?'+':''}${bell(rowpnl,0)} (${rowpnl>=0?'+':''}${pct}%)</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="number" class="qty" id="sq-${sym}" value="${holding.shares}" min="1" max="${holding.shares}">
+          <button class="btn-s" onclick="sell('${sym}',document.getElementById('sq-${sym}').value)">Sell</button>
+        </div>
+      </div>`;
+    }
+    h += '</div>';
+  }
+  document.getElementById('content').innerHTML = h;
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER: TURNIPS
+// ══════════════════════════════════════════════════════════
+
+function renderTurnips() {
+  checkSpoilage();
+  const today = dow();
+  const isMon = today === 1;
+  const isSun = today === 0;
+  const wp    = weekPrices();
+  const buy   = wp[0];
+  const cur   = wp[today];
+  const DAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  let forecast = '<div class="forecast">';
+  for (let i = 0; i < 7; i++) {
+    const isToday = i === today;
+    const isPast  = i < today && i > 0;
+    const isBuy   = i === 0;
+    const clr     = isBuy ? '#e65100' : wp[i] > buy ? '#2e7d32' : '#c62828';
+    forecast += `
+    <div class="fday${isToday?' today':''}${isPast?' past':''}">
+      <div class="dname">${DAYS[i]}</div>
+      <div class="dprice" style="color:${clr}">🔔${wp[i]}</div>
+      ${isToday ? '<div style="font-size:9px;color:#f57f17;margin-top:2px">TODAY</div>' : ''}
+    </div>`;
+  }
+  forecast += '</div>';
+
+  let h = `
+  <div class="turnip-hero">
+    <div style="font-size:46px">🌱</div>
+    <div style="font-family:'Press Start 2P',monospace;font-size:13px;margin:8px 0">STALK MARKET</div>
+    <p style="font-size:12px;color:#888">Buy bundles Monday · Sell Tue–Sat for profit!</p>
+    ${isMon ? `<p style="margin-top:10px;font-weight:800;color:#e65100;font-size:15px">Buy price: 🔔${buy}/bundle</p>` : ''}
+    ${!isMon && !isSun ? `<p style="margin-top:10px;font-weight:800;color:#2e7d32;font-size:15px">Today's price: 🔔${cur}/bundle</p>` : ''}
+    ${isSun ? `<p style="margin-top:10px;font-weight:800;color:#888">Shops closed today — come back Monday!</p>` : ''}
+  </div>
+  <h3 style="font-weight:800;margin-bottom:10px">📅 This Week's Forecast</h3>
+  ${forecast}`;
+
+  // Holding display
+  if (G.turnips.shares > 0) {
+    const curVal = cur * G.turnips.shares;
+    const inv    = G.turnips.buyPrice * G.turnips.shares;
+    const tpnl   = curVal - inv;
+    const rc     = tpnl>=0 ? 'pnl-up' : 'pnl-dn';
+    h += `
+    <div class="card-sm" style="background:#fff9c4;border-color:#f9a825">
+      <h3 style="font-weight:800;margin-bottom:8px">🌱 Your Turnip Holdings</h3>
+      <p>Bundles owned: <strong>${G.turnips.shares.toLocaleString()}</strong></p>
+      <p>Bought at: <strong>🔔${G.turnips.buyPrice}</strong> · Current: <strong>🔔${cur}</strong></p>
+      <p class="${rc}" style="margin-top:4px;font-weight:800">${tpnl>=0?'📈 Unrealized profit:':'📉 Unrealized loss:'} ${tpnl>=0?'+':''}🔔${Math.round(tpnl).toLocaleString()}</p>
+      ${!isSun
+        ? `<button class="big-btn btn-s" style="margin-top:12px" onclick="sellTurnips()">💰 Sell All Turnips (🔔${cur} each)</button>`
+        : `<p style="color:#888;margin-top:8px;font-size:12px">Cannot sell on Sundays!</p>`}
+    </div>`;
+  }
+
+  if (isMon) {
+    h += `
+    <div class="card-sm">
+      <h3 style="font-weight:800;margin-bottom:10px">🛒 Buy Turnip Bundles</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:10px">Price: 🔔${buy}/bundle · Balance: ${bell(G.bells,0)}</p>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" class="qty" id="t-qty" value="100" min="1" style="width:100px">
+        <button class="big-btn btn-b" onclick="buyTurnips(document.getElementById('t-qty').value)">🌱 Buy Bundles</button>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('content').innerHTML = h;
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER: VILLAGE
+// ══════════════════════════════════════════════════════════
+
+function renderVillage() {
+  const vals = Object.values(G.prices);
+  const avgChg = vals.length ? vals.reduce((s,p) => s+p.chg, 0) / vals.length : 0;
+  const sentiment = avgChg > 0.5 ? 'bull' : avgChg < -0.5 ? 'bear' : 'flat';
+  const sentLabel = sentiment==='bull' ? '🐂 Bullish' : sentiment==='bear' ? '🐻 Bearish' : '😐 Neutral';
+  const sentColor = sentiment==='bull' ? '#2e7d32' : sentiment==='bear' ? '#c62828' : '#777';
+
+  const rotIdx = Math.floor(Date.now() / 60_000); // rotate messages each minute
+
+  let h = '<div class="npc-grid">';
+  for (const npc of NPCS) {
+    const msgs = npc[sentiment];
+    const msg  = msgs[rotIdx % msgs.length];
+    h += `
+    <div class="npc-card">
+      <div class="npc-av">${npc.em}</div>
+      <div class="npc-name">${npc.name}</div>
+      <div class="npc-role">${npc.role}</div>
+      <div class="speech">${msg}</div>
+    </div>`;
+  }
+  h += '</div>';
+
+  h += `
+  <div class="sentiment-bar">
+    <strong>Market Sentiment: <span style="color:${sentColor}">${sentLabel}</span></strong>
+    <p style="font-size:12px;color:#aaa;margin-top:3px">Avg market change: ${avgChg>=0?'+':''}${avgChg.toFixed(2)}% · Updates every minute</p>
+  </div>
+  <div class="card-sm" style="text-align:center;color:#aaa;margin-top:14px">
+    <p style="font-weight:800;font-size:12px">🏝️ Net Worth: ${bell(netWorth(),0)}</p>
+    <p style="font-size:11px;margin-top:4px">Island Level: ${ISLANDS[G.isleLevel].emoji} ${ISLANDS[G.isleLevel].name}</p>
+    <p style="font-size:11px;margin-top:2px">Data source: ${G.source === 'live' ? '🟢 Yahoo Finance (Live)' : '🟡 Simulated'}</p>
+  </div>`;
+
+  document.getElementById('content').innerHTML = h;
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+
+async function init() {
+  load();
+  updateClock();
+  setInterval(updateClock, 30_000);
+
+  document.getElementById('load-msg').textContent = 'Fetching market data…';
+  await refreshPrices();
+
+  // Fade out loading screen
+  const loading = document.getElementById('loading');
+  loading.style.opacity = '0';
+  setTimeout(() => {
+    loading.style.display = 'none';
+    document.getElementById('game').style.display = 'block';
+  }, 800);
+
+  updateBells();
+  recalcLevel();
+  checkSpoilage();
+  renderMarket();
+
+  // Refresh prices every 60 seconds
+  setInterval(refreshPrices, 60_000);
+}
+
+init();
+</script>
+</body>
+</html>
