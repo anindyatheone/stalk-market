@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Stalk Market 🌱</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root {
   --sky: #6BBBF5;
@@ -202,6 +203,130 @@ body {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.2); border-radius: 3px; }
 
+/* ── CHART MODAL ── */
+#chart-overlay {
+  position: fixed; inset: 0;
+  background: rgba(30,20,10,0.55);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+#chart-overlay.open { opacity: 1; pointer-events: all; }
+
+#chart-modal {
+  background: var(--cream);
+  border: 3px solid var(--brown);
+  border-radius: 18px;
+  box-shadow: 0 8px 0 rgba(0,0,0,.25), 0 16px 40px rgba(0,0,0,.3);
+  width: min(860px, 96vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 20px 22px 22px;
+  transform: translateY(30px) scale(0.97);
+  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+  scrollbar-width: thin;
+}
+#chart-overlay.open #chart-modal {
+  transform: translateY(0) scale(1);
+}
+
+/* Modal header */
+#cm-hdr {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #e0d5c5;
+  margin-bottom: 14px;
+  position: relative;
+}
+#cm-close {
+  position: absolute; top: 0; right: 0;
+  background: #f5ece0; border: 2px solid var(--brown);
+  border-radius: 50%; width: 34px; height: 34px;
+  font-size: 14px; cursor: pointer; color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; transition: background .15s;
+  line-height: 1;
+}
+#cm-close:hover { background: #ffe0cc; }
+
+/* Stats row */
+#cm-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.cm-stat {
+  background: white; border: 2px solid #e0d5c5;
+  border-radius: 10px; padding: 8px 10px; text-align: center;
+}
+.cm-stat-lbl { font-size: 9px; color: #aaa; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+.cm-stat-val { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--text); }
+
+/* Range buttons */
+#cm-ranges {
+  display: flex; gap: 6px; margin-bottom: 10px;
+}
+.range-btn {
+  padding: 5px 14px; border-radius: 20px;
+  border: 2px solid #e0d5c5; background: white;
+  font-family: 'Nunito', sans-serif; font-weight: 800;
+  font-size: 12px; cursor: pointer; color: var(--text);
+  transition: all .15s;
+}
+.range-btn:hover { border-color: var(--brown); }
+.range-btn.active {
+  background: var(--green); color: white;
+  border-color: #2d6e2d; box-shadow: 0 3px 0 #2d6e2d;
+}
+
+/* Chart wrapper */
+#cm-chart-wrap {
+  position: relative;
+  background: white; border: 2px solid #e0d5c5;
+  border-radius: 12px; padding: 12px;
+  min-height: 220px;
+  margin-bottom: 8px;
+}
+#cm-chart-loader {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; color: #aaa; font-size: 14px;
+  border-radius: 10px; background: white;
+  z-index: 2;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+#cm-canvas { display: block; width: 100% !important; height: 220px !important; }
+
+/* Volume */
+#cm-vol-wrap {
+  background: white; border: 2px solid #e0d5c5;
+  border-radius: 12px; padding: 8px 12px;
+  margin-bottom: 14px;
+}
+#cm-vol-canvas { display: block; width: 100% !important; height: 56px !important; }
+
+/* Trade section inside modal */
+#cm-trade {
+  background: white; border: 2px solid #e0d5c5;
+  border-radius: 12px; padding: 14px;
+  margin-top: 6px;
+}
+#cm-trade h4 {
+  font-weight: 800; font-size: 13px; margin-bottom: 10px;
+}
+.cm-trade-row {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.cm-holdings {
+  background: #f5f5f5; border-radius: 8px;
+  padding: 8px 12px; font-size: 12px; font-weight: 700;
+  color: #666; margin-top: 8px;
+}
+
 @media(max-width:600px){
   .stocks-grid { grid-template-columns: 1fr; }
   .forecast { grid-template-columns: repeat(4,1fr); }
@@ -219,6 +344,53 @@ body {
 </div>
 
 <div id="toast"></div>
+
+<!-- STOCK DETAIL MODAL -->
+<div id="chart-overlay" onclick="closeChart(event)">
+  <div id="chart-modal">
+    <!-- Header -->
+    <div id="cm-hdr">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="cm-em" style="font-size:36px"></div>
+        <div>
+          <div id="cm-sym" class="sym-badge" style="font-size:11px"></div>
+          <div id="cm-name" style="font-size:12px;color:#aaa;margin-top:4px;font-weight:700"></div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div id="cm-price" style="font-family:'Press Start 2P',monospace;font-size:16px"></div>
+        <div id="cm-chg" style="font-size:13px;font-weight:800;margin-top:4px"></div>
+      </div>
+      <button id="cm-close" onclick="closeChart()" title="Close">✕</button>
+    </div>
+
+    <!-- Key stats row -->
+    <div id="cm-stats"></div>
+
+    <!-- Range selector -->
+    <div id="cm-ranges">
+      <button class="range-btn active" onclick="setRange('1W',this)">1W</button>
+      <button class="range-btn" onclick="setRange('1M',this)">1M</button>
+      <button class="range-btn" onclick="setRange('3M',this)">3M</button>
+      <button class="range-btn" onclick="setRange('1Y',this)">1Y</button>
+      <button class="range-btn" onclick="setRange('5Y',this)">5Y</button>
+    </div>
+
+    <!-- Chart -->
+    <div id="cm-chart-wrap">
+      <div id="cm-chart-loader">🌿 Fetching history…</div>
+      <canvas id="cm-canvas"></canvas>
+    </div>
+
+    <!-- Volume bars -->
+    <div id="cm-vol-wrap" style="display:none">
+      <canvas id="cm-vol-canvas"></canvas>
+    </div>
+
+    <!-- Trade + holdings -->
+    <div id="cm-trade"></div>
+  </div>
+</div>
 
 <div id="game" style="display:none">
   <!-- HEADER -->
@@ -679,7 +851,7 @@ function renderMarket() {
     const cls = p.chg >= 0 ? 'chg-up' : 'chg-dn';
     const chgStr = `${p.chg >= 0 ? '+' : ''}${p.chg.toFixed(2)}%`;
     h += `
-    <div class="scard">
+    <div class="scard" style="cursor:pointer" onclick="openChart('${s.sym}')">
       <div class="scard-hdr">
         <div>
           <div class="sym-badge">${s.em} ${s.sym}</div>
@@ -690,7 +862,8 @@ function renderMarket() {
           <span class="schg ${cls}">${chgStr}</span>
         </div>
       </div>
-      <div class="sactions">
+      <div style="font-size:10px;color:#bbb;text-align:center;margin:4px 0 6px;font-weight:700">📈 Tap to view chart</div>
+      <div class="sactions" onclick="event.stopPropagation()">
         <input type="number" class="qty" id="q-${s.sym}" value="1" min="1">
         <button class="btn-b" onclick="buy('${s.sym}',document.getElementById('q-${s.sym}').value)">Buy</button>
         <button class="btn-s" onclick="sell('${s.sym}',document.getElementById('q-${s.sym}').value)">Sell</button>
@@ -916,6 +1089,388 @@ async function init() {
 }
 
 init();
-</script>
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChart({}); });
+
+// ══════════════════════════════════════════════════════════
+// STOCK DETAIL CHART MODAL
+// ══════════════════════════════════════════════════════════
+
+let _chartInst = null;   // Chart.js instance (price)
+let _volInst   = null;   // Chart.js instance (volume)
+let _curSym    = null;   // currently open symbol
+let _curRange  = '1W';   // active range
+let _histCache = {};     // { SYM: { range: { dates, closes, volumes, high52, low52, open } } }
+
+// Range → Yahoo Finance params
+const RANGE_CFG = {
+  '1W': { range: '5d',  interval: '1d'  },
+  '1M': { range: '1mo', interval: '1d'  },
+  '3M': { range: '3mo', interval: '1d'  },
+  '1Y': { range: '1y',  interval: '1wk' },
+  '5Y': { range: '5y',  interval: '1mo' },
+};
+
+async function fetchHistory(sym, range) {
+  const key = `${sym}:${range}`;
+  if (_histCache[key]) return _histCache[key];
+
+  const cfg = RANGE_CFG[range];
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=${cfg.interval}&range=${cfg.range}`;
+  try {
+    const data = await tryFetch(url);
+    const res  = data?.chart?.result?.[0];
+    if (!res) throw new Error('No result');
+
+    const ts      = res.timestamps || res.timestamp || [];
+    const quotes  = res.indicators?.quote?.[0] || {};
+    const closes  = quotes.close  || [];
+    const volumes = quotes.volume || [];
+    const opens   = quotes.open   || [];
+    const highs   = quotes.high   || [];
+    const lows    = quotes.low    || [];
+
+    const dates = ts.map(t => {
+      const d = new Date(t * 1000);
+      if (range === '1W' || range === '1M' || range === '3M') {
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      }
+      return d.toLocaleDateString([], { year: '2-digit', month: 'short' });
+    });
+
+    const validCloses = closes.filter(Boolean);
+    const result = {
+      dates,
+      closes,
+      volumes,
+      opens,
+      highs,
+      lows,
+      high52: Math.max(...validCloses),
+      low52:  Math.min(...validCloses),
+    };
+    _histCache[key] = result;
+    return result;
+  } catch(e) {
+    return null;
+  }
+}
+
+function makeSyntheticHistory(sym, range, currentPrice) {
+  const cfg = RANGE_CFG[range];
+  // days of data to generate
+  const counts = { '1W': 5, '1M': 22, '3M': 65, '1Y': 52, '5Y': 60 };
+  const n = counts[range] || 22;
+
+  // Simple seeded LCG walk
+  let seed = sym.split('').reduce((a, c) => a + c.charCodeAt(0), 0) + n;
+  const rng = () => { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296; };
+
+  const vol = ['TSLA','NVDA','META'].includes(sym) ? 0.025 : 0.012;
+
+  // Walk backwards from current price
+  const closes = [currentPrice];
+  for (let i = 1; i < n; i++) {
+    const prev = closes[closes.length - 1];
+    closes.push(Math.max(1, prev * (1 + (rng() - 0.48) * vol)));
+  }
+  closes.reverse();
+
+  const now = Date.now();
+  const msPerBar = { '1W': 864e5, '1M': 864e5, '3M': 864e5, '1Y': 6048e5, '5Y': 2592e6 };
+  const step = msPerBar[range] || 864e5;
+  const dates = closes.map((_, i) => {
+    const d = new Date(now - (n - 1 - i) * step);
+    if (range === '1W' || range === '1M' || range === '3M') {
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+    return d.toLocaleDateString([], { year: '2-digit', month: 'short' });
+  });
+
+  const volumes = closes.map(() => Math.floor(rng() * 50_000_000 + 5_000_000));
+  const validCloses = closes.filter(Boolean);
+  return {
+    dates, closes, volumes,
+    opens: closes.map(c => c * (0.99 + rng() * 0.02)),
+    highs: closes.map(c => c * (1 + rng() * 0.015)),
+    lows:  closes.map(c => c * (0.985 + rng() * 0.01)),
+    high52: Math.max(...validCloses),
+    low52:  Math.min(...validCloses),
+    synthetic: true,
+  };
+}
+
+function destroyCharts() {
+  if (_chartInst) { _chartInst.destroy(); _chartInst = null; }
+  if (_volInst)   { _volInst.destroy();   _volInst   = null; }
+}
+
+function renderChart(hist, sym, isUp) {
+  destroyCharts();
+  const canvas = document.getElementById('cm-canvas');
+  const volCanvas = document.getElementById('cm-vol-canvas');
+  const loader  = document.getElementById('cm-chart-loader');
+  const volWrap = document.getElementById('cm-vol-wrap');
+
+  if (!hist || !hist.closes.length) {
+    loader.textContent = '⚠️ No history available';
+    loader.style.display = 'flex';
+    canvas.style.display = 'none';
+    volWrap.style.display = 'none';
+    return;
+  }
+
+  loader.style.display = 'none';
+  canvas.style.display = 'block';
+
+  const lineColor  = isUp ? '#43A047' : '#E53935';
+  const fillColor  = isUp ? 'rgba(67,160,71,0.13)' : 'rgba(229,57,53,0.10)';
+  const dotColor   = isUp ? '#2e7d32' : '#b71c1c';
+
+  // Filter null/undefined closes
+  const labels = [];
+  const data   = [];
+  for (let i = 0; i < hist.dates.length; i++) {
+    if (hist.closes[i] != null) {
+      labels.push(hist.dates[i]);
+      data.push(+hist.closes[i].toFixed(2));
+    }
+  }
+
+  _chartInst = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: lineColor,
+        borderWidth: 2.5,
+        backgroundColor: fillColor,
+        fill: true,
+        tension: 0.35,
+        pointRadius: data.length <= 20 ? 3 : 0,
+        pointHoverRadius: 5,
+        pointBackgroundColor: dotColor,
+        pointBorderColor: 'white',
+        pointBorderWidth: 1.5,
+      }]
+    },
+    options: {
+      responsive: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#3D2B1F',
+          titleColor: '#aaa',
+          bodyColor: 'white',
+          titleFont: { family: 'Nunito', size: 11, weight: '700' },
+          bodyFont: { family: "'Press Start 2P'", size: 10 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: ctx => ` 🔔${ctx.parsed.y.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.04)', drawTicks: false },
+          ticks: {
+            font: { family: 'Nunito', size: 10, weight: '700' },
+            color: '#bbb',
+            maxRotation: 0,
+            maxTicksLimit: 7,
+          },
+          border: { display: false },
+        },
+        y: {
+          position: 'right',
+          grid: { color: 'rgba(0,0,0,0.05)', drawTicks: false },
+          ticks: {
+            font: { family: "'Press Start 2P'", size: 8 },
+            color: '#999',
+            maxTicksLimit: 5,
+            callback: v => '🔔' + v.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}),
+          },
+          border: { display: false },
+        }
+      },
+    }
+  });
+
+  // Volume bars
+  const vols = hist.volumes.filter((v,i) => hist.closes[i] != null);
+  if (vols.length) {
+    volWrap.style.display = 'block';
+    _volInst = new Chart(volCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: vols.map(v => v || 0),
+          backgroundColor: isUp ? 'rgba(67,160,71,0.35)' : 'rgba(229,57,53,0.30)',
+          borderColor: isUp ? 'rgba(67,160,71,0.6)' : 'rgba(229,57,53,0.55)',
+          borderWidth: 1,
+          borderRadius: 2,
+        }]
+      },
+      options: {
+        responsive: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: {
+            position: 'right',
+            grid: { display: false },
+            ticks: {
+              font: { family: 'Nunito', size: 8 },
+              color: '#ccc',
+              maxTicksLimit: 2,
+              callback: v => v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v,
+            },
+            border: { display: false },
+          }
+        }
+      }
+    });
+  } else {
+    volWrap.style.display = 'none';
+  }
+}
+
+function buildModalStats(sym, hist, price) {
+  const p = G.prices[sym];
+  const chg = p?.chg ?? 0;
+  const isUp = chg >= 0;
+
+  // Header
+  document.getElementById('cm-price').textContent = `🔔${price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  const chgEl = document.getElementById('cm-chg');
+  chgEl.textContent = `${isUp?'▲':'▼'} ${Math.abs(chg).toFixed(2)}%`;
+  chgEl.style.color = isUp ? '#43A047' : '#E53935';
+
+  // Stats
+  const statsEl = document.getElementById('cm-stats');
+  const high52 = hist?.high52 ?? price;
+  const low52  = hist?.low52  ?? price;
+  const h = G.portfolio[sym];
+  const statsData = [
+    { lbl: '52W High', val: `🔔${high52.toFixed(0)}` },
+    { lbl: '52W Low',  val: `🔔${low52.toFixed(0)}` },
+    { lbl: 'Day Chg',  val: `${isUp?'+':''}${chg.toFixed(2)}%` },
+    { lbl: 'You Own',  val: h ? `${h.shares} sh` : '—' },
+    { lbl: 'Avg Cost', val: h ? `🔔${h.avgPrice.toFixed(2)}` : '—' },
+    { lbl: 'P&L',      val: h ? (() => { const r=(price-h.avgPrice)/h.avgPrice*100; return `${r>=0?'+':''}${r.toFixed(1)}%`; })() : '—' },
+  ];
+  statsEl.innerHTML = statsData.map(s => `
+    <div class="cm-stat">
+      <div class="cm-stat-lbl">${s.lbl}</div>
+      <div class="cm-stat-val">${s.val}</div>
+    </div>`).join('');
+
+  // Trade section
+  const tradeEl = document.getElementById('cm-trade');
+  const holding = G.portfolio[sym];
+  tradeEl.innerHTML = `
+    <h4>🛒 Trade ${sym}</h4>
+    <div class="cm-trade-row">
+      <input type="number" class="qty" id="cm-qty" value="1" min="1" style="width:70px">
+      <button class="btn-b" onclick="buy('${sym}',document.getElementById('cm-qty').value);buildModalStats('${sym}',_lastHist,G.prices['${sym}']?.price||0)">Buy</button>
+      <button class="btn-s" onclick="sell('${sym}',document.getElementById('cm-qty').value);buildModalStats('${sym}',_lastHist,G.prices['${sym}']?.price||0)">Sell</button>
+      <span style="font-size:12px;color:#aaa;font-weight:700">Balance: 🔔${Math.round(G.bells).toLocaleString()}</span>
+    </div>
+    ${holding ? `<div class="cm-holdings">📋 Holding ${holding.shares} shares · avg 🔔${holding.avgPrice.toFixed(2)} · current 🔔${price.toFixed(2)}</div>` : ''}
+  `;
+}
+
+let _lastHist = null; // last fetched history for trade refresh
+
+async function openChart(sym) {
+  _curSym   = sym;
+  _curRange = '1W';
+
+  // Reset range buttons
+  document.querySelectorAll('.range-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === _curRange);
+  });
+
+  const s     = CATALOG.find(c => c.sym === sym);
+  const p     = G.prices[sym];
+  const price = p?.price ?? 0;
+  const isUp  = (p?.chg ?? 0) >= 0;
+
+  // Fill static header info
+  document.getElementById('cm-em').textContent   = s?.em ?? '📊';
+  document.getElementById('cm-sym').textContent  = sym;
+  document.getElementById('cm-name').textContent = p?.name ?? s?.name ?? sym;
+
+  // Show overlay
+  const overlay = document.getElementById('chart-overlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Reset chart area
+  destroyCharts();
+  const loader = document.getElementById('cm-chart-loader');
+  const canvas = document.getElementById('cm-canvas');
+  const volWrap = document.getElementById('cm-vol-wrap');
+  loader.textContent = '🌿 Fetching history…';
+  loader.style.display = 'flex';
+  canvas.style.display = 'none';
+  volWrap.style.display = 'none';
+
+  // Populate header + stats with what we have
+  buildModalStats(sym, null, price);
+
+  // Fetch history
+  let hist = await fetchHistory(sym, _curRange);
+  if (!hist) {
+    hist = makeSyntheticHistory(sym, _curRange, price);
+    if (hist.synthetic) {
+      loader.textContent = '🟡 Simulated history';
+      setTimeout(() => { if (loader) loader.style.display = 'none'; }, 1200);
+    }
+  }
+  _lastHist = hist;
+  buildModalStats(sym, hist, price);
+  renderChart(hist, sym, isUp);
+}
+
+async function setRange(range, btn) {
+  if (!_curSym) return;
+  _curRange = range;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const p = G.prices[_curSym];
+  const price = p?.price ?? 0;
+  const isUp  = (p?.chg ?? 0) >= 0;
+
+  destroyCharts();
+  const loader  = document.getElementById('cm-chart-loader');
+  const canvas  = document.getElementById('cm-canvas');
+  const volWrap = document.getElementById('cm-vol-wrap');
+  loader.textContent = '🌿 Fetching history…';
+  loader.style.display = 'flex';
+  canvas.style.display = 'none';
+  volWrap.style.display = 'none';
+
+  let hist = await fetchHistory(_curSym, range);
+  if (!hist) hist = makeSyntheticHistory(_curSym, range, price);
+  _lastHist = hist;
+  buildModalStats(_curSym, hist, price);
+  renderChart(hist, _curSym, isUp);
+}
+
+function closeChart(e) {
+  // Allow: no event (programmatic), Escape key, clicking the backdrop, clicking ✕ button
+  if (e && e.target && e.target.id !== 'chart-overlay' && e.target.id !== 'cm-close') return;
+  destroyCharts();
+  document.getElementById('chart-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  _curSym = null;
+  _lastHist = null;
+}
+
 </body>
 </html>
