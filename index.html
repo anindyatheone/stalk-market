@@ -785,14 +785,16 @@ function renderTurnips() {
 
   let forecast = '<div class="forecast">';
   for (let i = 0; i < 7; i++) {
-    const isToday = i === today;
-    const isPast  = i < today && i > 0;
-    const isBuy   = i === 0;
-    const clr     = isBuy ? '#e65100' : wp[i] > buy ? '#2e7d32' : '#c62828';
+    const isToday  = i === today;
+    const isPast   = i < today && i > 0;
+    const isFuture = i > today;
+    const isBuy    = i === 0;
+    const clr      = isFuture ? '#aaa' : isBuy ? '#e65100' : wp[i] > buy ? '#2e7d32' : '#c62828';
+    const label    = isFuture ? '???' : `🔔${wp[i]}`;
     forecast += `
     <div class="fday${isToday?' today':''}${isPast?' past':''}">
       <div class="dname">${DAYS[i]}</div>
-      <div class="dprice" style="color:${clr}">🔔${wp[i]}</div>
+      <div class="dprice" style="color:${clr}">${label}</div>
       ${isToday ? '<div style="font-size:9px;color:#f57f17;margin-top:2px">TODAY</div>' : ''}
     </div>`;
   }
